@@ -1,12 +1,14 @@
-module Tile exposing (Tile, addRandomTile, baseTiles, move)
+module Tile exposing (Tile, addRandomTile, baseTiles, col, move, row)
 
 import Keyboard exposing (Key(..))
+import List.Extra
 import Random
 import Util
 
 
 type alias Tile =
-    { value : Int
+    { slug : Int
+    , value : Int
     , position : Int
     }
 
@@ -36,9 +38,9 @@ setCol newCol tile =
     { tile | position = fromRowCol { row = row tile, col = newCol } }
 
 
-newTile : Int -> Tile
-newTile =
-    Tile 2
+newTile : Int -> Int -> Tile
+newTile slug =
+    Tile slug 2
 
 
 isCellFilled : List Tile -> Int -> Bool
@@ -53,7 +55,7 @@ isCellFilled tiles pos =
 
 addTiles : Tile -> Tile -> Tile
 addTiles a b =
-    Tile (a.value + b.value) a.position
+    { a | value = a.value + b.value }
 
 
 baseTiles : List Int
@@ -71,19 +73,22 @@ addRandomTile toMsg existingTiles =
     let
         validPositions =
             List.filter (not << isCellFilled existingTiles) baseTiles
+
+        nextSlug =
+            (Maybe.withDefault 0 << Maybe.map .slug) (List.Extra.maximumBy .slug existingTiles) + 1
     in
-    case validPositions of
-        [] ->
+    case ( validPositions, nextSlug ) of
+        ( [], _ ) ->
             Cmd.none
 
-        [ x ] ->
+        ( [ x ], slug ) ->
             Random.generate toMsg <|
-                Random.map newTile <|
+                Random.map (newTile slug) <|
                     Random.constant x
 
-        x :: xs ->
+        ( x :: xs, slug ) ->
             Random.generate toMsg <|
-                Random.map newTile <|
+                Random.map (newTile slug) <|
                     Random.uniform x xs
 
 

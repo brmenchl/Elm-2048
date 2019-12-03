@@ -1,13 +1,10 @@
 module Grid exposing (viewGrid)
 
 import Color exposing (tileColor)
-import Element exposing (Element, centerX, centerY, clip, el, fill, height, padding, px, rgb255, rgba255, spacing, text, width)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Html exposing (Html)
-import Tile exposing (Tile, baseTiles)
-import Util
+import Html exposing (Attribute, Html, div, p, text)
+import Html.Attributes exposing (..)
+import Html.Keyed as Keyed
+import Tile exposing (Tile, col, row)
 
 
 type alias Model =
@@ -16,78 +13,112 @@ type alias Model =
 
 viewGrid : Model -> Html msg
 viewGrid model =
-    let
-        grid =
-            Util.partitionEvery 4 <|
-                List.map (\idx -> Util.find (\tile -> tile.position == idx) model) baseTiles
-    in
-    Element.layout [] <|
-        el
-            [ centerX
-            , centerY
-            , Background.color (rgb255 187 173 160)
-            , padding 15
-            , Border.rounded 6
+    div [ style "display" "flex", style "justify-content" "center", style "align-items" "center", style "height" "100vh" ] <|
+        [ div
+            [ style "background-color" "rgb(187 173 160)"
+            , style "width" "475px"
+            , style "height" "475px"
+            , style "border-radius" "6px"
             ]
-        <|
-            Element.column
-                [ spacing 15 ]
+          <|
+            [ Keyed.ul
+                [ style "width" "100%"
+                , style "height" "100%"
+                , style "position" "relative"
+                , style "margin" "0"
+                , style "padding" "0"
+                ]
+              <|
+                gridBackground
+                    :: List.map viewFilledCell model
+            ]
+        ]
+
+
+gridBackground : ( String, Html msg )
+gridBackground =
+    ( "Background"
+    , div
+        [ style "display" "flex"
+        , style "flex-direction" "column" --spacing 15
+        , style "position" "absolute"
+        , style "top" "0"
+        , style "bottom" "0"
+        , style "left" "0"
+        , style "right" "0"
+        ]
+      <|
+        List.repeat 4 <|
+            div
+                [ style "display" "flex" -- spacing 15
+                , style "width" "100%"
+                ]
             <|
-                List.map gridRow grid
+                List.repeat
+                    4
+                    viewEmptyCell
+    )
 
 
-gridRow : List (Maybe Tile) -> Element msg
-gridRow cells =
-    Element.row [ spacing 15 ] <|
-        List.map viewCell cells
-
-
-viewCell : Maybe Tile -> Element msg
-viewCell tile =
-    el
-        [ Border.rounded 3
-        , Background.color (rgba255 240 227 213 0.35)
-        , height (px 100)
-        , width (px 100)
-        , clip
+viewEmptyCell : Html msg
+viewEmptyCell =
+    div
+        [ style "border-radius" "3px"
+        , style "background-color" "rgba(240, 227, 213, 0.35)"
+        , style "height" "100px"
+        , style "width" "100px"
+        , style "overflow" "none"
+        , style "margin-left" "15px"
+        , style "margin-top" "15px"
         ]
-    <|
-        case tile of
-            Nothing ->
-                Element.none
-
-            Just cell ->
-                viewFilledCell cell.value
+        []
 
 
-viewFilledCell : Int -> Element msg
-viewFilledCell num =
-    el
-        [ width fill
-        , height fill
-        , Background.color (tileColor num)
+viewFilledCell : Tile -> ( String, Html msg )
+viewFilledCell tile =
+    ( String.fromInt tile.slug
+    , div
+        [ style "border-radius" "3px"
+        , style "background-color" (tileColor tile.value)
+        , style "height" "100px"
+        , style "width" "100px"
+        , style "overflow" "none"
+        , style "transition" "transform 100ms"
+        , style "position" "absolute"
+        , style "display" "flex"
+        , style "align-items" "center"
+        , adjustPosition tile
         ]
-    <|
-        el
-            [ centerY
-            , width fill
-            , Font.center
-            , Font.size
-                (if num >= 1000 then
-                    35
+      <|
+        [ div
+            [ style "width" "100%"
+            , style "text-align" "center"
+            , style "font-size"
+                (if tile.value >= 1000 then
+                    "35px"
 
-                 else if num >= 100 then
-                    45
+                 else if tile.value >= 100 then
+                    "45px"
 
                  else
-                    55
+                    "55px"
                 )
-            , Font.color (rgb255 119 110 101)
-            , Font.family
-                [ Font.typeface "Helvetica Neue"
-                , Font.typeface "Arial"
-                , Font.sansSerif
-                ]
-            , Font.bold
+            , style "color" "rgb(119,110,101)"
+            , style "font-family" "Helvetica Neue, Arial, sans-serif"
+            , style "font-weight" "bold"
             ]
-            (text <| String.fromInt num)
+            [ text <| String.fromInt tile.value ]
+        ]
+    )
+
+
+adjustPosition : Tile -> Attribute msg
+adjustPosition tile =
+    let
+        x =
+            String.fromInt ((col tile * 115) + 15) ++ "px"
+
+        y =
+            String.fromInt ((row tile * 115) + 15) ++ "px"
+    in
+    style "transform" ("translate3d(" ++ x ++ ", " ++ y ++ ", 0)")

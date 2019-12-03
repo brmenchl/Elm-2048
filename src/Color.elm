@@ -1,34 +1,34 @@
 module Color exposing (tileColor)
 
-import Element exposing (Color, fromRgb, rgb255, toRgb)
 
-
-tileColor : Int -> Element.Color
+tileColor : Int -> String
 tileColor num =
     let
         weight =
             logBase 2 (toFloat num) / logBase 2 2048
 
         minColor =
-            rgb255 238 228 218
+            RGB 238 228 218
 
         maxColor =
-            rgb255 237 194 46
+            RGB 237 194 46
+
+        mixedColor =
+            mixColors maxColor minColor weight
     in
-    mixColors maxColor minColor weight
+    "rgb(" ++ String.fromFloat mixedColor.red ++ "," ++ String.fromFloat mixedColor.green ++ "," ++ String.fromFloat mixedColor.blue ++ ")"
 
 
-mixColors : Color -> Color -> Float -> Color
-mixColors color1 color2 weight =
-    let
-        ( rgb1, rgb2 ) =
-            ( toRgb color1, toRgb color2 )
+type alias RGB =
+    { red : Float
+    , green : Float
+    , blue : Float
+    }
 
-        weightedRgb =
-            { red = (rgb1.red * weight) + (rgb2.red * 1 - weight)
-            , green = (rgb1.green * weight) + (rgb2.green * 1 - weight)
-            , blue = (rgb1.blue * weight) + (rgb2.blue * 1 - weight)
-            , alpha = (rgb1.alpha * weight) + (rgb2.alpha * 1 - weight)
-            }
-    in
-    fromRgb weightedRgb
+
+mixColors : RGB -> RGB -> Float -> RGB
+mixColors rgb1 rgb2 weight =
+    { red = (rgb1.red * weight) + (rgb2.red * 1 - weight)
+    , green = (rgb1.green * weight) + (rgb2.green * 1 - weight)
+    , blue = (rgb1.blue * weight) + (rgb2.blue * 1 - weight)
+    }
